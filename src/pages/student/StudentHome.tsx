@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, FileText, Plus, KeyRound, Award, Loader } from 'lucide-react';
+import { BookOpen, FileText, Plus, KeyRound, Award, Loader, Mail } from 'lucide-react';
 import MainLayout from '../../components/layout/MainLayout';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import { useAuth } from '../../contexts/AuthContext';
+import { sendMessage } from '../../services/messages';
 import { db } from '../../lib/firebase';
 import { collection, query, where, onSnapshot, doc, getDoc, updateDoc } from 'firebase/firestore';
 import type { Submission } from '../../types';
@@ -24,8 +25,24 @@ export default function StudentHome() {
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [studentDocIds, setStudentDocIds] = useState<string[]>([]);
+  const [classIds, setClassIds] = useState<string[]>([]);
+
+  const handleMessageTeacher = async (teacherId: string, className: string) => {
+    if (!teacherId) { alert('Мұғалім табылмады'); return; }
+    const text = window.prompt(`Хабарлама мәтіні (${className} мұғаліміне):`);
+    if (text) {
+      try {
+        await sendMessage({
+          senderId: user?.id || '',
+          senderName: user?.name || 'Оқушы',
+          receiverId: teacherId,
+          text
+        });
+        alert('Хабарлама жіберілді!');
+      } catch(e) { alert('Қате шықты'); }
+    }
+  };
 
   // Generate parent code for existing students if missing
   useEffect(() => {
@@ -72,6 +89,7 @@ export default function StudentHome() {
         }
       });
       setStudentDocIds(Array.from(new Set(docIds)));
+      setClassIds(classIds);
 
       if (classIds.length === 0) {
         setClasses([]);
@@ -105,27 +123,60 @@ export default function StudentHome() {
   useEffect(() => {
     if (!db || !user || studentDocIds.length === 0) return;
 
-    const subQuery = query(
-      collection(db, 'submissions'),
-      where("studentId", "in", studentDocIds)
-    );
+    const mergedSubmissions = new Map<string, Submission>();
 
-    const unsubscribeSubmissions = onSnapshot(subQuery, (querySnapshot) => {
-      const subs: Submission[] = [];
-      querySnapshot.forEach((docSnap) => {
-        subs.push({ id: docSnap.id, ...docSnap.data() } as Submission);
-      });
-      // Sort newest first
+    const updateSubmissions = () => {
+      const subs = Array.from(mergedSubmissions.values());
       subs.sort((a, b) => {
         const timeA = (a.createdAt as any)?.seconds || 0;
         const timeB = (b.createdAt as any)?.seconds || 0;
         return timeB - timeA;
       });
       setSubmissions(subs);
+    };
+
+    // Query 1: Assignments given directly to the student
+    const subQuery1 = query(
+      collection(db, 'submissions'),
+      where("studentId", "in", studentDocIds)
+    );
+
+    const unsubscribe1 = onSnapshot(subQuery1, (querySnapshot) => {
+      querySnapshot.docChanges().forEach((change) => {
+        if (change.type === "removed") {
+          mergedSubmissions.delete(change.doc.id);
+        } else {
+          mergedSubmissions.set(change.doc.id, { id: change.doc.id, ...change.doc.data() } as Submission);
+        }
+      });
+      updateSubmissions();
     });
 
-    return () => unsubscribeSubmissions();
-  }, [studentDocIds, user]);
+    // Query 2: Assignments given to the whole class
+    let unsubscribe2 = () => {};
+    if (classIds.length > 0) {
+      const subQuery2 = query(
+        collection(db, 'submissions'),
+        where("studentId", "==", "all"),
+        where("classId", "in", classIds)
+      );
+      unsubscribe2 = onSnapshot(subQuery2, (querySnapshot) => {
+        querySnapshot.docChanges().forEach((change) => {
+          if (change.type === "removed") {
+            mergedSubmissions.delete(change.doc.id);
+          } else {
+            mergedSubmissions.set(change.doc.id, { id: change.doc.id, ...change.doc.data() } as Submission);
+          }
+        });
+        updateSubmissions();
+      });
+    }
+
+    return () => {
+      unsubscribe1();
+      unsubscribe2();
+    };
+  }, [studentDocIds, classIds, user]);
 
   // Calculations
   const reviewedSubmissions = submissions.filter(s => s.status === 'reviewed');
@@ -217,9 +268,12 @@ export default function StudentHome() {
                       </div>
                     </div>
                   </div>
-                  <div className="class-card-footer">
+                  <div className="class-card-footer" style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                     <span className="student-count">Оқушылар саны: {c.studentsCount || 1}</span>
-                    <Badge color="green" filled>Белсенді</Badge>
+                    <Badge color="green" filled style={{ marginLeft: '8px' }}>Белсенді</Badge>
+                    <button onClick={() => handleMessageTeacher(c.teacherId, c.name)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--accent-primary)', marginLeft: 'auto' }} title="Мұғалімге хабарлама жазу">
+                      <Mail size={18} />
+                    </button>
                   </div>
                 </Card>
               ))}
@@ -258,6 +312,11 @@ export default function StudentHome() {
                         <div>
                           <h4 className="submission-title">{sub.title}</h4>
                           <span className="submission-subject">{sub.subject}</span>
+                          {sub.dueDate && (
+                            <span className="submission-dueDate" style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+                              Дедлайн: {new Date(sub.dueDate).toLocaleString('kk-KZ', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="submission-status-group">

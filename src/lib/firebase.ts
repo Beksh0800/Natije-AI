@@ -16,6 +16,7 @@ const firebaseConfig = {
 // Initialize Firebase only if the config is valid (prevent crashes if env vars are not set)
 const isValidConfig = firebaseConfig.apiKey && firebaseConfig.projectId;
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const app = isValidConfig ? initializeApp(firebaseConfig) : null;
 const auth = (app ? getAuth(app) : null) as any;
 const db = (app ? getFirestore(app) : null) as any;

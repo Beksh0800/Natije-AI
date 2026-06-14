@@ -108,12 +108,14 @@
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-xl);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .archive-table {
   width: 100%;
   border-collapse: collapse;
+  white-space: nowrap;
 }
 
 .archive-table th {

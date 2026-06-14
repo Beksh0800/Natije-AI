@@ -51,6 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               classInfo: userData.classInfo,
               parentCode: userData.parentCode,
               createdAt: userData.createdAt || new Date().toISOString(),
+              avatar: userData.avatar,
             });
           } else {
             setUser({

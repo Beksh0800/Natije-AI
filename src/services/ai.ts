@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../lib/firebase';
 import type { Review } from '../types';
@@ -57,35 +57,67 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: nu
   }
 }
 
-export const analyzeWork = async (imageUrl: string, subject: string, title: string): Promise<Omit<Review, 'id' | 'submissionId' | 'createdAt'>> => {
+export const analyzeWork = async (imageUrl: string, subject: string, title: string, solutionUrls: string[] = []): Promise<Omit<Review, 'id' | 'submissionId' | 'createdAt'>> => {
   if (!functions) {
     throw new Error("Firebase Functions бапталмаған.");
   }
 
-  const prompt = `
-Ты - опытный школьный учитель. Проанализируй работу ученика по предмету "${subject}" (Тема: "${title}").
-Работа представлена на изображении.
-Внимательно изучи текст/решения на картинке.
-Найди ошибки, если они есть. Оцени работу по 100-балльной шкале.
+  const prompt = solutionUrls.length > 0 ? `
+Ты - опытный школьный учитель. Проанализируй решение ученика по предмету "${subject}" (Тема: "${title}").
+В первом изображении представлено задание (условие задачи), которое дал учитель.
+В последующих изображениях представлено решение ученика (возможно на нескольких страницах).
+
+СНАЧАЛА реши задачу самостоятельно шаг за шагом (запиши свой процесс в поле "stepByStepCalculation"). 
+ЗАТЕМ внимательно проверь каждый шаг решения ученика, сравнивая со своим правильным решением. 
+Учитывай, что ученик может использовать нестандартный, необычный, но математически верный способ решения. Не снижай баллы и не считай ошибкой, если метод не классический, но приводит к правильному результату и логически обоснован.
+Найди фактические, логические и вычислительные ошибки, если они действительно есть.
+Оцени работу по 100-балльной шкале.
 Дай конструктивную обратную связь на казахском языке (feedback).
 Предложи рекомендации по улучшению на казахском языке.
 
+ОЧЕНЬ ВАЖНО ДЛЯ ОШИБОК И РЕКОМЕНДАЦИЙ:
+- Будь МАКСИМАЛЬНО точным. Не используй общие фразы вроде "допущена ошибка в вычислениях".
+- Указывай конкретные числа и формулы. (Например: "Оқушы 6.6 * 1.6 көбейтіндісін 10 емес, 10.56 деп алуы керек еді").
+- Пиши точно, в каком месте и на каком шаге допущена ошибка.
+
+ТВОЙ ОТВЕТ ДОЛЖЕН БЫТЬ СТРОГО В ФОРМАТЕ JSON, без Markdown форматирования (без \`\`\`json) и без лишнего текста.
+` : `
+Ты - опытный школьный учитель. Проанализируй работу ученика по предмету "${subject}" (Тема: "${title}").
+Работа представлена на изображении.
+
+СНАЧАЛА реши задачу самостоятельно шаг за шагом (запиши свой процесс в поле "stepByStepCalculation"). 
+ЗАТЕМ внимательно изучи текст/решения на картинке.
+Учитывай, что ученик может использовать нестандартный, необычный, но математически верный способ решения. Не снижай баллы и не считай ошибкой, если метод не классический, но приводит к правильному результату и логически обоснован.
+Найди фактические, логические и вычислительные ошибки, если они действительно есть.
+Оцени работу по 100-балльной шкале.
+Дай конструктивную обратную связь на казахском языке (feedback).
+Предложи рекомендации по улучшению на казахском языке.
+
+ОЧЕНЬ ВАЖНО ДЛЯ ОШИБОК И РЕКОМЕНДАЦИЙ:
+- Будь МАКСИМАЛЬНО точным. Не используй общие фразы вроде "допущена ошибка в вычислениях".
+- Указывай конкретные числа и формулы. (Например: "Оқушы 6.6 * 1.6 көбейтіндісін 10 емес, 10.56 деп алуы керек еді").
+- Пиши точно, в каком месте и на каком шаге допущена ошибка.
+
 ВАЖНОЕ УСЛОВИЕ: Если на картинке только текст задания (задачи, примеры), но НЕТ решения ученика, верни следующий JSON и больше ничего не анализируй:
-{ "score": 0, "maxScore": 0, "percentage": 0, "mistakes": [{ "type": "Шешім жоқ", "description": "Бұл тек тапсырма. Оқушының шешімін жүктеңіз." }], "feedback": "Бұл тек тапсырма немесе шарт. Тексеру үшін оқушының шығарған шешімін жүктеңіз.", "recommendations": [], "strengths": [], "criteria": [] }
+{ "stepByStepCalculation": "", "score": 0, "maxScore": 0, "percentage": 0, "mistakes": [{ "type": "Шешім жоқ", "description": "Бұл тек тапсырма. Оқушының шешімін жүктеңіз." }], "feedback": "Бұл тек тапсырма немесе шарт. Тексеру үшін оқушының шығарған шешімін жүктеңіз.", "recommendations": [], "strengths": [], "criteria": [] }
 
 Иначе, ТВОЙ ОТВЕТ ДОЛЖЕН БЫТЬ СТРОГО В ФОРМАТЕ JSON, без Markdown форматирования (без \`\`\`json) и без лишнего текста.
+`;
+
+  const promptSuffix = `
 Структура JSON:
 {
+  "stepByStepCalculation": "Мұғалімнің ішкі тексеру процесі және дұрыс шешімі (қадам-қадам)",
   "score": число (от 0 до 100),
   "maxScore": 100,
   "percentage": число (равно score),
   "mistakes": [
-    { "type": "Строка (тип ошибки)", "description": "Строка (описание ошибки на казахском)" }
+    { "type": "Қате түрі", "description": "НАҚТЫ сипаттама. Мысалы: 5 * 5 = 25 болуы керек, бірақ оқушы 20 деп жазған." }
   ],
-  "feedback": "Текст обратной связи на казахском языке",
+  "feedback": "Оқушыға арналған нақты және түсінікті кері байланыс",
   "recommendations": [
-    "Рекомендация 1",
-    "Рекомендация 2"
+    "Нақты ұсыныс 1 (қандай ережені қайталау керек екенін дәл көрсетіңіз)",
+    "Нақты ұсыныс 2"
   ],
   "strengths": [
     "Сильная сторона 1",
@@ -97,22 +129,31 @@ export const analyzeWork = async (imageUrl: string, subject: string, title: stri
 }
 `;
 
+  const finalPrompt = prompt + promptSuffix;
+
   const makeRequest = async (): Promise<Omit<Review, 'id' | 'submissionId' | 'createdAt'>> => {
     const generateAIResponse = httpsCallable(functions, 'generateAIResponse');
     
     try {
+      const contentParams: any[] = [
+        { type: "text", text: finalPrompt },
+        { type: "image_url", image_url: { url: imageUrl } }
+      ];
+      if (solutionUrls && solutionUrls.length > 0) {
+        for (const url of solutionUrls) {
+          contentParams.push({ type: "image_url", image_url: { url } });
+        }
+      }
+
       const response = await generateAIResponse({
         body: {
-          models: ["openai/gpt-4o-mini", "anthropic/claude-3-haiku"],
+          models: ["openai/gpt-4o", "anthropic/claude-3.5-sonnet"],
           route: "fallback",
           response_format: { type: "json_object" },
           messages: [
             {
               role: "user",
-              content: [
-                { type: "text", text: prompt },
-                { type: "image_url", image_url: { url: imageUrl } }
-              ]
+              content: contentParams
             }
           ]
         }
@@ -127,9 +168,8 @@ export const analyzeWork = async (imageUrl: string, subject: string, title: stri
       const content = data.choices[0].message.content;
       const parsed = JSON.parse(content);
       return validateAndNormalize(parsed);
-    } catch (err: any) {
-      console.error("AI Analysis Error:", err);
-      throw new Error('AI талдауы кезінде қате пайда болды немесе уақыт өтіп кетті. Қайта көріңіз.');
+    } catch (err: any) { console.error("AI Analysis Error:", err);
+      throw new Error('AI талдауы кезінде қате пайда болды немесе уақыт өтіп кетті. Қайта көріңіз.', { cause: err });
     }
   };
 
@@ -144,7 +184,7 @@ export const analyzeWork = async (imageUrl: string, subject: string, title: stri
         return await makeRequest();
       } catch (retryError: any) {
         if (retryError instanceof SyntaxError) {
-          throw new Error('AI дұрыс форматта жауап бере алмады. Қайта көріңіз.');
+          throw new Error('AI дұрыс форматта жауап бере алмады. Қайта көріңіз.', { cause: retryError });
         }
         throw retryError;
       }
@@ -172,7 +212,7 @@ export const getChatResponse = async (userMessage: string, history: { role: 'use
     const generateAIResponse = httpsCallable(functions, 'generateAIResponse');
     const response = await generateAIResponse({
       body: {
-        model: "openai/gpt-4o-mini",
+        model: "openai/gpt-4o",
         messages: [
           systemPrompt,
           ...formattedHistory,
@@ -187,8 +227,7 @@ export const getChatResponse = async (userMessage: string, history: { role: 'use
       return getMockResponse(userMessage);
     }
     return data.choices[0].message.content;
-  } catch (err: any) {
-    console.error("Failed to get chat response from Functions", err);
+  } catch (err: any) { console.error("Failed to get chat response from Functions", err);
     return getMockResponse(userMessage);
   }
 };

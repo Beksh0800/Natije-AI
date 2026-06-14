@@ -74,6 +74,7 @@ export default function AssignmentsPage() {
                 <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
                   <th style={{ padding: 'var(--space-3)' }}>Тақырып</th>
                   <th style={{ padding: 'var(--space-3)' }}>Пән</th>
+                  <th style={{ padding: 'var(--space-3)' }}>Дедлайн</th>
                   <th style={{ padding: 'var(--space-3)' }}>Файл</th>
                   <th style={{ padding: 'var(--space-3)' }}>Статус</th>
                   <th style={{ padding: 'var(--space-3)' }}>Әрекет</th>
@@ -84,6 +85,9 @@ export default function AssignmentsPage() {
                   <tr key={sub.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                     <td style={{ padding: 'var(--space-3)', fontWeight: 500 }}>{sub.title}</td>
                     <td style={{ padding: 'var(--space-3)', color: 'var(--text-secondary)' }}>{sub.subject}</td>
+                    <td style={{ padding: 'var(--space-3)', color: 'var(--text-secondary)' }}>
+                      {sub.dueDate ? new Date(sub.dueDate).toLocaleString('kk-KZ', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Көрсетілмеген'}
+                    </td>
                     <td style={{ padding: 'var(--space-3)', color: 'var(--text-secondary)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <FileText size={16} /> {sub.fileName}

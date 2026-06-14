@@ -38,8 +38,7 @@ export default function JoinClassPage() {
         toast.success(`"${found.name}" сыныбына сәтті қосылдыңыз!`);
       }
       setCode('');
-    } catch (err: any) {
-      console.error(err);
+    } catch (err: any) { console.error(err);
       toast.error(err.message || 'Сыныпқа қосылу кезінде қате пайда болды.');
     } finally {
       setLoading(false);

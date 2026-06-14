@@ -26,8 +26,7 @@ export default function LoginPage() {
       // AuthContext's onAuthStateChanged will update user and AppRoutes will redirect based on role automatically.
       // But we can fallback to navigate('/') just in case.
       navigate('/');
-    } catch (err: any) {
-      console.error(err);
+    } catch (err: any) { console.error(err);
       const code = err?.code || '';
       if (code === 'auth/user-not-found') {
         setError('Бұл email-мен аккаунт табылмады. Алдымен тіркеліңіз.');

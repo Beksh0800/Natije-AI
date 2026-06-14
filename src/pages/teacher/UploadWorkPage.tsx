@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Upload, Loader } from 'lucide-react';
 import MainLayout from '../../components/layout/MainLayout';
 import Card from '../../components/ui/Card';
@@ -10,6 +10,7 @@ import { getTeacherClasses } from '../../services/classes';
 import { getClassStudents } from '../../services/students';
 import { uploadFileToFirebase } from '../../services/storage';
 import { createSubmission } from '../../services/submissions';
+import { createNotification } from '../../services/notifications';
 import type { SchoolClass, Student } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
 import { SUBJECTS } from '../../lib/constants';
@@ -19,6 +20,7 @@ import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 export default function UploadWorkPage() {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
   const paramClassId = searchParams.get('classId') || '';
   const paramStudentId = searchParams.get('studentId') || '';
@@ -31,6 +33,8 @@ export default function UploadWorkPage() {
   const [subject, setSubject] = useState('');
   const [title, setTitle] = useState('');
   const [type, setType] = useState<'assignment' | 'test' | 'essay' | 'practice' | 'project'>('assignment');
+  const [maxAttempts, setMaxAttempts] = useState(3);
+  const [dueDate, setDueDate] = useState('');
   
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -123,7 +127,7 @@ export default function UploadWorkPage() {
       const fileSizeStr = mbSize === "0.0" ? `${Math.round(file.size / 1024)} KB` : `${mbSize} MB`;
 
       // 3. Save to Firestore
-      await createSubmission({
+      const newSubmissionId = await createSubmission({
         teacherId: user.id,
         classId: selectedClass,
         studentId: 'all', // Indicates it's for the whole class
@@ -133,13 +137,26 @@ export default function UploadWorkPage() {
         fileUrl: storageResult.url,
         fileName: file.name,
         fileSize: fileSizeStr,
-        status: 'uploaded'
+        status: 'uploaded',
+        maxAttempts,
+        ...(dueDate ? { dueDate } : {})
       });
 
+      // 4. Send notifications
+      const classStudents = await getClassStudents(selectedClass);
+      const notifPromises = classStudents.map(student => 
+        createNotification({
+          userId: student.id,
+          title: 'Жаңа тапсырма',
+          message: `${finalSubject} пәнінен жаңа тапсырма қосылды: ${title}`,
+          type: 'assignment',
+          link: '/student'
+        })
+      );
+      await Promise.all(notifPromises);
+
       toast.success("Жұмыс сәтті жүктелді!");
-      // Reset form (except class/student for convenience)
-      setTitle('');
-      setFile(null);
+      navigate('/teacher/assignments/' + newSubmissionId);
       
     } catch (err: any) {
       console.error(err);
@@ -174,103 +191,163 @@ export default function UploadWorkPage() {
                 onChange={e => setSelectedClass(e.target.value)}
                 required
               >
-                <option value="">-- Сыныпты таңдаңыз --</option>
+                <option value="">Сыныпты таңдаңыз...</option>
                 {classes.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>
 
-
-
+            {/* Subject and Type */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
-              {/* Subject */}
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Пән</label>
                 <select 
                   className="form-input" 
-                  value={subject}
+                  value={subject} 
                   onChange={e => setSubject(e.target.value)}
-                  required 
+                  required
                 >
-                  <option value="">-- Пәнді таңдаңыз --</option>
-                  {Array.from(new Set([...SUBJECTS, ...customSubjects])).map(s => (
+                  <option value="">Пәнді таңдаңыз...</option>
+                  {SUBJECTS.map(s => (
                     <option key={s} value={s}>{s}</option>
                   ))}
-                  <option value="other">Басқа (Другое)</option>
+                  {customSubjects.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                  <option value="other">Басқа пән (жазу)</option>
                 </select>
-                
+
                 {subject === 'other' && (
-                  <input 
-                    className="form-input" 
-                    type="text" 
-                    placeholder="Пән атауын жазыңыз..."
+                  <input
+                    type="text"
+                    placeholder="Пәннің атын жазыңыз"
+                    className="form-input"
+                    style={{ marginTop: '8px' }}
                     value={customSubjectText}
-                    onChange={e => setCustomSubjectText(e.target.value)}
+                    onChange={(e) => setCustomSubjectText(e.target.value)}
                     required
-                    style={{ marginTop: '8px', width: '100%' }}
                   />
                 )}
               </div>
-
-              {/* Type */}
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Тапсырма түрі</label>
-                <select className="form-input" value={type} onChange={e => setType(e.target.value as any)}>
+                <select 
+                  className="form-input" 
+                  value={type} 
+                  onChange={e => setType(e.target.value as any)}
+                  required
+                >
                   <option value="assignment">Үй жұмысы</option>
                   <option value="test">Бақылау жұмысы</option>
-                  <option value="essay">Эссе</option>
-                  <option value="practice">Практика</option>
+                  <option value="practice">Практикалық жұмыс</option>
                   <option value="project">Жоба</option>
+                  <option value="essay">Эссе</option>
                 </select>
               </div>
             </div>
 
-            {/* Title */}
-            <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Тақырыбы</label>
-              <input 
-                className="form-input" 
-                type="text" 
-                placeholder="Жұмыс тақырыбы немесе нұсқасы"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                required 
-              />
-            </div>
-
-            {/* File Upload */}
-            <div style={{ marginTop: 'var(--space-2)' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Файл жүктеу (PDF, JPG, PNG)</label>
-              <div style={{ border: '2px dashed var(--border-color)', padding: 'var(--space-6)', textAlign: 'center', borderRadius: 'var(--border-radius-lg)', background: 'var(--bg-card)' }}>
+            {/* Title & Attempts */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--space-4)' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Тақырыбы</label>
                 <input 
-                  type="file" 
-                  id="file-upload" 
-                  style={{ display: 'none' }} 
-                  onChange={handleFileChange}
-                  accept=".pdf,.jpg,.jpeg,.png,.docx"
+                  type="text" 
+                  className="form-input" 
+                  placeholder="Жұмыс тақырыбы немесе нұсқасы"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  required
                 />
-                <label htmlFor="file-upload" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-2)' }}>
-                  <div style={{ padding: 'var(--space-3)', background: 'var(--accent-primary-light)', borderRadius: '50%', color: 'var(--accent-primary)' }}>
-                    <Upload size={24} />
-                  </div>
-                  <span style={{ fontWeight: 500, color: 'var(--accent-primary)' }}>
-                    {file ? `✅ ${file.name}` : "Компьютерден файл таңдау"}
-                  </span>
-                  <span style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>
-                    {file ? 'Файл дайын. Қайта таңдау үшін басыңыз.' : 'Max 20 MB'}
-                  </span>
-                </label>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Мүмкіндіктер саны</label>
+                <input 
+                  type="number" 
+                  className="form-input" 
+                  value={maxAttempts}
+                  onChange={e => setMaxAttempts(Number(e.target.value))}
+                  min={1}
+                  max={10}
+                  required
+                />
               </div>
             </div>
 
-            <Button type="submit" variant="primary" size="lg" disabled={isUploading || !file} style={{ marginTop: 'var(--space-4)' }}>
-              {isUploading ? <Loader size={18} className="spin" /> : "Жүктеп салу"}
+            {/* Due Date */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Срок сдачи (Дедлайн) (Міндетті емес)</label>
+              <input 
+                type="datetime-local" 
+                className="form-input" 
+                value={dueDate}
+                onChange={e => setDueDate(e.target.value)}
+              />
+            </div>
+
+            {/* File Upload Area */}
+            <div style={{ marginTop: 'var(--space-2)' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Файл жүктеу (PDF, JPG, PNG)</label>
+              <div 
+                style={{ 
+                  border: '2px dashed var(--border-color)', 
+                  borderRadius: 'var(--border-radius-lg)', 
+                  padding: 'var(--space-8)', 
+                  textAlign: 'center',
+                  background: 'var(--bg-secondary)',
+                  cursor: 'pointer',
+                  position: 'relative'
+                }}
+              >
+                <input 
+                  type="file" 
+                  accept=".pdf,.jpg,.jpeg,.png,.docx"
+                  onChange={handleFileChange}
+                  style={{ 
+                    position: 'absolute', 
+                    top: 0, left: 0, width: '100%', height: '100%', 
+                    opacity: 0, cursor: 'pointer' 
+                  }}
+                />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-3)' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--accent-primary-light)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Upload size={24} />
+                  </div>
+                  {file ? (
+                    <div>
+                      <p style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{file.name}</p>
+                      <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p style={{ color: 'var(--accent-primary)', fontWeight: 500 }}>Компьютерден файл таңдау</p>
+                      <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>Max 20 MB</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <Button 
+              type="submit" 
+              variant="primary" 
+              size="lg" 
+              fullWidth 
+              disabled={!file || !selectedClass || !title || !subject || isUploading}
+              style={{ marginTop: 'var(--space-4)' }}
+            >
+              {isUploading ? (
+                <>
+                  <Loader size={20} className="spin" />
+                  Жүктелуде...
+                </>
+              ) : (
+                'Жүктеп салу'
+              )}
             </Button>
           </form>
         </Card>
       </div>
-
     </MainLayout>
   );
 }

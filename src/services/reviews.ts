@@ -4,29 +4,38 @@ import type { Review } from '../types';
 
 const COLLECTION_NAME = 'reviews';
 
-export const createReview = async (submissionId: string, reviewData: Omit<Review, 'id' | 'submissionId' | 'createdAt'>) => {
+export const createReview = async (targetId: string, isSolution: boolean, reviewData: Omit<Review, 'id' | 'submissionId' | 'solutionId' | 'createdAt'>) => {
   if (!db) throw new Error("Firestore not initialized");
 
   const docRef = await addDoc(collection(db, COLLECTION_NAME), {
-    submissionId,
+    [isSolution ? 'solutionId' : 'submissionId']: targetId,
     ...reviewData,
     createdAt: serverTimestamp()
   });
 
-  // Update submission status to 'pending_teacher_review', but keep AI score temporarily
-  const submissionRef = doc(db, 'submissions', submissionId);
-  await updateDoc(submissionRef, { 
-    status: 'pending_teacher_review',
-    score: reviewData.score // This is a draft score now
-  });
+  if (isSolution) {
+    const solutionRef = doc(db, 'solutions', targetId);
+    await updateDoc(solutionRef, { 
+      status: 'ai_reviewed',
+      aiScore: reviewData.score
+    });
+  } else {
+    // Legacy support for direct submissions
+    const submissionRef = doc(db, 'submissions', targetId);
+    await updateDoc(submissionRef, { 
+      status: 'pending_teacher_review',
+      score: reviewData.score // This is a draft score now
+    });
+  }
 
   return docRef.id;
 };
 
-export const getReviewForSubmission = async (submissionId: string): Promise<Review | null> => {
+export const getReviewForSubmission = async (targetId: string, isSolution: boolean = false): Promise<Review | null> => {
   if (!db) return null;
 
-  const q = query(collection(db, COLLECTION_NAME), where("submissionId", "==", submissionId));
+  const field = isSolution ? "solutionId" : "submissionId";
+  const q = query(collection(db, COLLECTION_NAME), where(field, "==", targetId));
   const querySnapshot = await getDocs(q);
 
   if (querySnapshot.empty) return null;

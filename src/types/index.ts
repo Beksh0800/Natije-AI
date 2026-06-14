@@ -42,6 +42,7 @@ export interface Student {
   xp?: number;
   maxXp?: number;
   streak?: number;
+  studentId?: string; // Auth UID
 }
 
 // ---- Submission ----
@@ -64,6 +65,29 @@ export interface Submission {
   type: 'assignment' | 'test' | 'essay' | 'practice' | 'project';
   score?: number;
   teacherComment?: string;
+  maxAttempts?: number;
+}
+
+// ---- Solution (Student's submitted answer) ----
+export type SolutionStatus = 'pending_ai' | 'ai_reviewed' | 'teacher_graded';
+
+export interface Solution {
+  id: string;
+  assignmentId: string; // Links to Submission ID where studentId is 'all'
+  studentId: string;
+  studentEmail?: string;
+  fileUrl: string;
+  fileName: string;
+  fileSize: string;
+  fileUrls?: string[];
+  fileNames?: string[];
+  fileSizes?: string[];
+  iteration: number;
+  status: SolutionStatus;
+  aiScore?: number;
+  teacherScore?: number;
+  teacherComment?: string;
+  createdAt: any; // Firestore Timestamp
 }
 
 // ---- Review (AI Analysis) ----
@@ -81,7 +105,8 @@ export interface ReviewCriteria {
 
 export interface Review {
   id: string;
-  submissionId: string;
+  submissionId?: string; // Legacy, or for direct submissions
+  solutionId?: string;   // For student solutions
   score: number;
   maxScore: number;
   percentage: number;

@@ -34,8 +34,7 @@ export default function RegisterPage() {
       await register(email, password, name, role);
       // Wait a moment for auth state to propagate, or just navigate
       navigate('/');
-    } catch (err: any) {
-      console.error(err);
+    } catch (err: any) { console.error(err);
       const code = err?.code || '';
       if (code === 'auth/email-already-in-use') {
         setError('Бұл email-мен аккаунт бұрыннан бар. Кіру бетіне өтіңіз.');

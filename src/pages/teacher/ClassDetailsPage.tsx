@@ -8,10 +8,13 @@ import { db } from '../../lib/firebase';
 import { doc, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { addStudent } from '../../services/students';
 import { useToast } from '../../contexts/ToastContext';
+import { sendMessage } from '../../services/messages';
+import { useAuth } from '../../contexts/AuthContext';
 import type { Student, SchoolClass } from '../../types';
 
 export default function ClassDetailsPage() {
   const { classId } = useParams();
+  const { user } = useAuth();
   const toast = useToast();
   
   const [classInfo, setClassInfo] = useState<SchoolClass | null>(null);
@@ -55,6 +58,23 @@ export default function ClassDetailsPage() {
       unsubscribeStudents();
     };
   }, [classId]);
+
+  const handleSendMessage = async (student: Student) => {
+    const text = window.prompt(`Хабарлама мәтіні (\${student.name}):`);
+    if (text) {
+      try {
+        await sendMessage({
+          senderId: user?.id || '',
+          senderName: user?.name || 'Мұғалім',
+          receiverId: student.id,
+          text
+        });
+        toast.success('Хабарлама жіберілді!');
+      } catch (e) {
+        toast.error('Қате пайда болды');
+      }
+    }
+  };
 
   const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,6 +172,9 @@ export default function ClassDetailsPage() {
                         {student.email && <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{student.email}</div>}
                       </div>
                     </div>
+                    <button onClick={() => handleSendMessage(student)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center' }} title="Хабарлама жазу">
+                      Хабарлама жазу
+                    </button>
                   </div>
                 ))}
               </div>

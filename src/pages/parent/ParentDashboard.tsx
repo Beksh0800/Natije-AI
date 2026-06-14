@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, FileText, CheckCircle, Clock, Award, Link as LinkIcon, Zap, Lightbulb, Target } from 'lucide-react';

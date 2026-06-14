@@ -21,12 +21,12 @@ export const SUBJECTS = [
 export const CLASS_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
 // Жұмыс түрлерінің аудармасы
-export const ASSIGNMENT_TYPES: Record<string, string> = {
-  'assignment': 'Үй жұмысы',
-  'test': 'Бақылау жұмысы',
-  'project': 'Жоба',
-  'practice': 'Практика',
-  'essay': 'Эссе',
+export const ASSIGNMENT_TYPES: Record<string, { label: string, color: string }> = {
+  'assignment': { label: 'Үй тапсырмасы', color: 'blue' },
+  'test': { label: 'Бақылау жұмысы', color: 'red' },
+  'project': { label: 'Жоба', color: 'purple' },
+  'practice': { label: 'Практика', color: 'green' },
+  'essay': { label: 'Эссе', color: 'yellow' },
 };
 
 // Статустар аудармасы

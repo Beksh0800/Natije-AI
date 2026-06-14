@@ -1,38 +1,34 @@
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import * as functions from "firebase-functions";
 import fetch from "node-fetch";
 
-// We'll read the secret from environment variables
-// In production, you would set this via Firebase CLI:
-// firebase functions:secrets:set OPENROUTER_API_KEY
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "YOUR_OPENROUTER_KEY_HERE";
 
-export const generateAIResponse = onCall(
-  {
-    cors: true,
+export const generateAIResponse = functions
+  .runWith({
     secrets: ["OPENROUTER_API_KEY"],
-  },
-  async (request) => {
+  })
+  .https.onCall(async (data, context) => {
     // 1. Ensure user is authenticated
-    if (!request.auth) {
-      throw new HttpsError(
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
         "unauthenticated",
         "Қолданушы жүйеге кірмеген. (Unauthenticated)"
       );
     }
 
-    const apiKey = process.env.OPENROUTER_API_KEY || OPENROUTER_API_KEY;
+    const apiKey = (process.env.OPENROUTER_API_KEY || OPENROUTER_API_KEY).trim();
 
     if (!apiKey || apiKey === "YOUR_OPENROUTER_KEY_HERE") {
-      throw new HttpsError(
+      throw new functions.https.HttpsError(
         "failed-precondition",
         "OpenRouter API кілті серверде бапталмаған."
       );
     }
 
-    const { body } = request.data;
+    const body = data.body;
 
     if (!body || !body.messages) {
-      throw new HttpsError(
+      throw new functions.https.HttpsError(
         "invalid-argument",
         "Сұрау форматы қате. (Invalid request body)"
       );
@@ -53,17 +49,16 @@ export const generateAIResponse = onCall(
       if (!response.ok) {
         const errorText = await response.text();
         console.error("OpenRouter error:", response.status, errorText);
-        throw new HttpsError(
+        throw new functions.https.HttpsError(
           "internal",
           `AI сервері қате қайтарды (${response.status})`
         );
       }
 
-      const data = await response.json();
-      return data;
+      const responseData = await response.json();
+      return responseData;
     } catch (error: any) {
       console.error("Function Error:", error);
-      throw new HttpsError("internal", error.message || "AI сұрауын орындау мүмкін болмады.");
+      throw new functions.https.HttpsError("internal", error.message || "AI сұрауын орындау мүмкін болмады.");
     }
-  }
-);
+  });
