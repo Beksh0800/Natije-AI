@@ -206,6 +206,118 @@
   color: var(--accent-primary);
 }
 
+/* Password reset action */
+.reset-password-page {
+  padding: var(--space-4);
+}
+
+.reset-password-card {
+  max-width: 460px;
+  border-radius: var(--border-radius-xl);
+}
+
+.reset-password-heading {
+  margin-bottom: var(--space-6);
+}
+
+.reset-password-heading > p:last-child {
+  max-width: 340px;
+  margin-top: var(--space-2);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.reset-account {
+  margin-top: var(--space-2) !important;
+  color: var(--text-primary) !important;
+  font-size: 0.875rem !important;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.password-input-wrap {
+  position: relative;
+}
+
+.password-input-wrap .form-input {
+  padding-right: 48px;
+}
+
+.password-visibility {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transform: translateY(-50%);
+  border-radius: var(--border-radius-sm);
+}
+
+.password-visibility:hover {
+  color: var(--accent-primary);
+  background: var(--accent-primary-light);
+}
+
+.reset-field-hint {
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+}
+
+.reset-error {
+  padding: 10px 12px;
+  color: var(--color-error);
+  background: var(--color-error-light);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--border-radius-md);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.reset-status {
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.reset-status h1 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+.reset-status p {
+  max-width: 340px;
+  margin: var(--space-3) 0 var(--space-6);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.reset-status-icon {
+  flex: 0 0 auto;
+}
+
+.reset-status-icon-error {
+  background: var(--color-error);
+  box-shadow: 0 10px 28px rgba(239, 68, 68, 0.22);
+}
+
+.reset-status-icon-success {
+  background: var(--color-success);
+  box-shadow: 0 10px 28px rgba(16, 185, 129, 0.22);
+}
+
+.reset-link-button {
+  text-decoration: none !important;
+}
+
 /* Theme toggle on login */
 .login-theme-toggle {
   position: absolute;

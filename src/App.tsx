@@ -23,6 +23,7 @@ import JoinClassPage from './pages/student/JoinClassPage';
 import StudentProgressPage from './pages/student/StudentProgressPage';
 import TeacherStatsPage from './pages/teacher/TeacherStatsPage';
 import ProfileSettings from './pages/settings/ProfileSettings';
+import ChatPage from './pages/chat/ChatPage';
 
 function HomeRedirect() {
   const { user } = useAuth();
@@ -78,6 +79,7 @@ function AppRoutes() {
 
       {/* Shared Authenticated Routes */}
       <Route path="/settings" element={<ProfileSettings />} />
+      <Route path="/messages" element={<ChatPage />} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -5,15 +5,15 @@ export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 interface ToastItem {
   id: number;
-  message: string;
+  message: ReactNode;
   type: ToastType;
 }
 
 interface ToastContextType {
-  success: (message: string) => void;
-  error: (message: string) => void;
-  info: (message: string) => void;
-  warning: (message: string) => void;
+  success: (message: ReactNode) => void;
+  error: (message: ReactNode) => void;
+  info: (message: ReactNode) => void;
+  warning: (message: ReactNode) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -23,7 +23,7 @@ let toastId = 0;
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
-  const addToast = useCallback((message: string, type: ToastType) => {
+  const addToast = useCallback((message: ReactNode, type: ToastType) => {
     const id = ++toastId;
     setToasts(prev => [...prev, { id, message, type }]);
     // Auto-remove after 4 seconds

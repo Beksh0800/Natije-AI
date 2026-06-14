@@ -4,7 +4,7 @@ import {
   Home, FileText, MessageCircle, Calendar, TrendingUp,
   BookOpen, Award, Lightbulb, Folder, PlusCircle,
   Upload, HelpCircle, Bot, Users, CheckCircle,
-  BarChart2, Bell, Settings, Zap
+  BarChart2, Bell, Zap
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getAvatarColor, getInitials } from '../../utils/avatar';
@@ -29,7 +29,6 @@ const iconMap: Record<string, React.ReactNode> = {
   'check-circle': <CheckCircle size={18} />,
   'bar-chart-2': <BarChart2 size={18} />,
   'bell': <Bell size={18} />,
-  'settings': <Settings size={18} />,
 };
 
 import { studentNavItems, teacherNavItems, quickActions } from '../../data/mockData';
@@ -133,7 +132,7 @@ export default function Sidebar({ isOpen = true, onClose, onChatOpen }: SidebarP
                 key={action.label}
                 className={`sidebar-quick-btn ${idx === 0 ? 'sidebar-quick-btn-primary' : ''}`}
                 onClick={() => {
-                  if (action.label === 'Жаңа тапсырма' || action.label === 'Файл жүктеу') {
+                  if (action.label === 'Жаңа тапсырма') {
                     navigate('/teacher/upload');
                   } else if (action.label === 'Сұрақ қою' || action.label === 'AI көмекші чат') {
                     if (onChatOpen) onChatOpen();
@@ -150,16 +149,6 @@ export default function Sidebar({ isOpen = true, onClose, onChatOpen }: SidebarP
         )}
 
         <div className="sidebar-footer">
-          <button 
-            className="sidebar-quick-btn" 
-            style={{ width: '100%', marginBottom: '8px', color: 'var(--text-secondary)' }}
-            onClick={() => navigate('/settings')}
-          >
-            <span className="sidebar-nav-icon">
-              <Settings size={18} />
-            </span>
-            Баптаулар
-          </button>
           <button 
             className="sidebar-quick-btn" 
             style={{ width: '100%', marginTop: 'auto', color: 'var(--color-error)' }}

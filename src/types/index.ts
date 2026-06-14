@@ -75,6 +75,7 @@ export interface Solution {
   id: string;
   assignmentId: string; // Links to Submission ID where studentId is 'all'
   studentId: string;
+  studentName?: string;
   studentEmail?: string;
   fileUrl: string;
   fileName: string;

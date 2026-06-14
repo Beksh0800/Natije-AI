@@ -286,6 +286,7 @@ export const studentNavItems = [
   { label: 'Менің тапсырмаларым', path: '/assignments', icon: 'file-text' },
   { label: 'Менің үлгерімім', path: '/progress', icon: 'trending-up' },
   { label: 'Сыныпқа қосылу', path: '/join-class', icon: 'plus-circle' },
+  { label: 'Хабарламалар', path: '/messages', icon: 'message-circle' },
   { label: 'Архив', path: '/archive', icon: 'folder' },
 ];
 
@@ -295,11 +296,11 @@ export const teacherNavItems = [
   { label: 'Оқушылар', path: '/teacher/students', icon: 'users' },
   { label: 'Жұмыс жүктеу', path: '/teacher/upload', icon: 'upload' },
   { label: 'Тапсырмалар', path: '/teacher/assignments', icon: 'file-text' },
+  { label: 'Хабарламалар', path: '/messages', icon: 'message-circle' },
   { label: 'Статистика', path: '/teacher/stats', icon: 'bar-chart-2' },
 ];
 
 export const quickActions = [
   { label: 'Жаңа тапсырма', icon: 'plus-circle', color: 'primary' },
-  { label: 'Файл жүктеу', icon: 'upload', color: 'secondary' },
   { label: 'AI көмекші чат', icon: 'bot', color: 'secondary' },
 ];

@@ -8,8 +8,9 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import { useAuth } from '../../contexts/AuthContext';
+import { db } from '../../lib/firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import type { Submission } from '../../types';
+import type { Submission, Solution } from '../../types';
 import { formatDate } from '../../lib/utils';
 import { ASSIGNMENT_TYPES } from '../../lib/constants';
 import './StudentArchivePage.css';
@@ -19,6 +20,7 @@ export default function StudentArchivePage() {
   
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [studentDocIds, setStudentDocIds] = useState<string[]>([]);
+  const [classIds, setClassIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,46 +37,117 @@ export default function StudentArchivePage() {
 
     const unsubscribe = onSnapshot(studentQuery, (querySnapshot) => {
       const ids = [user.id];
+      const classes: string[] = [];
       querySnapshot.forEach((docSnap) => {
         ids.push(docSnap.id);
+        const data = docSnap.data();
+        if (data.classId && !classes.includes(data.classId)) {
+          classes.push(data.classId);
+        }
       });
       setStudentDocIds(Array.from(new Set(ids)));
+      setClassIds(classes);
     });
 
     return () => unsubscribe();
   }, [user]);
 
-  // 2. Listen to reviewed submissions only
+  // 2. Listen to reviewed direct submissions and graded class solutions
   useEffect(() => {
     if (!db || !user || studentDocIds.length === 0) return;
 
     setLoading(true);
-    const q = query(
+    const directSubmissions = new Map<string, Submission>();
+    const classAssignments = new Map<string, Submission>();
+    const gradedSolutions = new Map<string, Solution>();
+
+    const updateArchive = () => {
+      const archiveItems: Submission[] = Array.from(directSubmissions.values());
+
+      gradedSolutions.forEach((solution) => {
+        const assignment = classAssignments.get(solution.assignmentId);
+        if (!assignment) return;
+
+        archiveItems.push({
+          ...assignment,
+          score: solution.teacherScore ?? solution.aiScore ?? 0,
+          fileName: solution.fileName || assignment.fileName,
+          fileUrl: solution.fileUrl || assignment.fileUrl,
+          fileSize: solution.fileSize || assignment.fileSize,
+          createdAt: solution.createdAt || assignment.createdAt,
+          status: 'reviewed'
+        });
+      });
+
+      archiveItems.sort((a, b) => {
+        const timeA = (a.createdAt as any)?.seconds || 0;
+        const timeB = (b.createdAt as any)?.seconds || 0;
+        return timeB - timeA;
+      });
+      setSubmissions(archiveItems);
+      setLoading(false);
+    };
+
+    const directQ = query(
       collection(db, 'submissions'), 
       where("studentId", "in", studentDocIds),
       where("status", "==", "reviewed")
     );
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const submissionsData: Submission[] = [];
+    const unsubscribeDirect = onSnapshot(directQ, (querySnapshot) => {
+      directSubmissions.clear();
       querySnapshot.forEach((docSnap) => {
-        submissionsData.push({ id: docSnap.id, ...docSnap.data() } as Submission);
+        directSubmissions.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as Submission);
       });
-      // Sort newest first
-      submissionsData.sort((a, b) => {
-        const timeA = (a.createdAt as any)?.seconds || 0;
-        const timeB = (b.createdAt as any)?.seconds || 0;
-        return timeB - timeA;
-      });
-      setSubmissions(submissionsData);
-      setLoading(false);
+      updateArchive();
     }, (error) => {
-      console.error("Failed to sync student archive submissions", error);
+      console.error("Failed to sync student archive direct submissions", error);
       setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, [studentDocIds, user]);
+    let unsubscribeClassAssignments = () => {};
+    if (classIds.length > 0) {
+      const classQ = query(
+        collection(db, 'submissions'),
+        where("studentId", "==", "all"),
+        where("classId", "in", classIds)
+      );
+      unsubscribeClassAssignments = onSnapshot(classQ, (querySnapshot) => {
+        classAssignments.clear();
+        querySnapshot.forEach((docSnap) => {
+          classAssignments.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as Submission);
+        });
+        updateArchive();
+      });
+    }
+
+    const solutionsQ = query(
+      collection(db, 'solutions'),
+      where("studentId", "==", user.id),
+      where("status", "==", "teacher_graded")
+    );
+
+    const unsubscribeSolutions = onSnapshot(solutionsQ, (querySnapshot) => {
+      gradedSolutions.clear();
+      querySnapshot.forEach((docSnap) => {
+        const solution = { id: docSnap.id, ...docSnap.data() } as Solution;
+        const current = gradedSolutions.get(solution.assignmentId);
+        if (!current || solution.iteration > current.iteration) {
+          gradedSolutions.set(solution.assignmentId, solution);
+        }
+      });
+      updateArchive();
+    }, (error) => {
+      console.error("Failed to sync student archive solutions", error);
+      setLoading(false);
+    });
+
+    return () => {
+      unsubscribeDirect();
+      unsubscribeClassAssignments();
+      unsubscribeSolutions();
+    };
+  }, [studentDocIds, classIds, user]);
 
   // Calculations
   const maxScore = submissions.length > 0 ? Math.max(...submissions.map(s => s.score || 0)) : 0;
@@ -93,17 +166,11 @@ export default function StudentArchivePage() {
   });
 
   const getTypeBadgeColor = (type: string) => {
-    switch (type) {
-      case 'assignment': return 'blue';
-      case 'test': return 'red';
-      case 'project': return 'purple';
-      case 'essay': return 'yellow';
-      default: return 'gray';
-    }
+    return ASSIGNMENT_TYPES[type]?.color || 'gray';
   };
 
   const formatType = (type: string) => {
-    return ASSIGNMENT_TYPES[type] || type;
+    return ASSIGNMENT_TYPES[type]?.label || type;
   };
 
   return (

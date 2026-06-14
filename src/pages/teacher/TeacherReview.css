@@ -5,6 +5,186 @@
   animation: fadeInUp 400ms ease;
 }
 
+.solution-review {
+  animation: fadeInUp 400ms ease;
+}
+
+.solutions-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-xl);
+  padding: var(--space-5);
+  animation: fadeInUp 400ms ease;
+}
+
+.solutions-panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  align-items: flex-start;
+  margin-bottom: var(--space-5);
+}
+
+.solutions-panel-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: var(--space-1);
+}
+
+.solutions-panel-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.solutions-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(96px, 1fr));
+  gap: var(--space-2);
+}
+
+.solutions-summary-item {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-3);
+  text-align: center;
+}
+
+.solutions-summary-item span {
+  display: block;
+  color: var(--text-primary);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.solutions-summary-item small {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  margin-top: var(--space-1);
+}
+
+.solutions-summary-item.is-success span {
+  color: var(--color-success);
+}
+
+.solutions-list {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+}
+
+.solutions-list-head,
+.solution-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.25fr) minmax(220px, 1fr) minmax(190px, 0.9fr) 130px;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.solutions-list-head {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  padding: var(--space-3) var(--space-4);
+}
+
+.solution-row {
+  background: var(--bg-card);
+  padding: var(--space-4);
+  border-top: 1px solid var(--border-color);
+}
+
+.solution-row:hover {
+  background: var(--bg-secondary);
+}
+
+.solution-student {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.solution-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--border-radius-md);
+  background: var(--accent-primary-light);
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.solution-student-name {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.solution-student-email,
+.solution-muted {
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+}
+
+.solution-file-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.solution-file-cell span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.solution-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: fit-content;
+  max-width: 100%;
+  padding: 6px 10px;
+  border-radius: var(--border-radius-full);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.solution-status.is-graded {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.solution-status.is-waiting {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+.solution-status.is-empty {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+.solution-action {
+  display: flex;
+  justify-content: flex-end;
+}
+
 /* Back link */
 .back-link {
   display: inline-flex;
@@ -302,5 +482,37 @@
   
   .review-two-cols {
     grid-template-columns: 1fr;
+  }
+
+  .solutions-panel-header {
+    flex-direction: column;
+  }
+
+  .solutions-summary {
+    width: 100%;
+  }
+
+  .solutions-list-head {
+    display: none;
+  }
+
+  .solution-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .solution-action {
+    justify-content: flex-start;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1100px) {
+  .solutions-list-head,
+  .solution-row {
+    grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr);
+  }
+
+  .solution-action {
+    justify-content: flex-start;
   }
 }

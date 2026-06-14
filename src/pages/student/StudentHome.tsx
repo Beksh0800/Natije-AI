@@ -81,9 +81,14 @@ export default function StudentHome() {
     const unsubscribeStudents = onSnapshot(studentQuery, async (querySnapshot) => {
       const classIds: string[] = [];
       const docIds = [user.id];
-      querySnapshot.forEach((docSnap) => {
+      querySnapshot.forEach(async (docSnap) => {
         docIds.push(docSnap.id);
         const data = docSnap.data();
+        if (!data.studentId && user?.id) {
+          try {
+            await updateDoc(doc(db, 'students', docSnap.id), { studentId: user.id });
+          } catch(e) {}
+        }
         if (data.classId && !classIds.includes(data.classId)) {
           classIds.push(data.classId);
         }

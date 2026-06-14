@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { CheckCircle, XCircle, Info, AlertTriangle, X } from 'lucide-react';
-import type { ToastType } from '../../contexts/ToastContext';
 import './Toast.css';
 
 interface ToastProps {
-  message: string;
-  type: ToastType;
+  message: ReactNode;
+  type: 'success' | 'error' | 'info' | 'warning';
   onClose: () => void;
 }
 

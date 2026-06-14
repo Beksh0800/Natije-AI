@@ -8,7 +8,7 @@ import Card from '../../components/ui/Card';
 import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import type { Submission } from '../../types';
+import type { Submission, Solution } from '../../types';
 import './TeacherStatsPage.css';
 
 interface StudentStat {
@@ -19,9 +19,19 @@ interface StudentStat {
   avg: number;
 }
 
+interface ReviewedItem {
+  id: string;
+  studentId: string;
+  studentName?: string;
+  studentEmail?: string;
+  subject: string;
+  score: number;
+}
+
 export default function TeacherStatsPage() {
   const { user } = useAuth();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [solutions, setSolutions] = useState<Solution[]>([]);
   const [studentsCount, setStudentsCount] = useState(0);
   const [classesCount, setClassesCount] = useState(0);
   const [studentsMap, setStudentsMap] = useState<Map<string, { name: string; email: string }>>(new Map());
@@ -48,7 +58,14 @@ export default function TeacherStatsPage() {
           setStudentsCount(studentsSnap.size);
           studentsSnap.forEach((doc) => {
             const data = doc.data();
-            tempStudentsMap.set(doc.id, { name: data.name || '', email: data.email || '' });
+            const studentDetails = { name: data.name || '', email: data.email || '' };
+            tempStudentsMap.set(doc.id, studentDetails);
+            if (data.studentId) {
+              tempStudentsMap.set(data.studentId, studentDetails);
+            }
+            if (data.email) {
+              tempStudentsMap.set(String(data.email).toLowerCase(), studentDetails);
+            }
           });
         }
         setStudentsMap(tempStudentsMap);
@@ -59,6 +76,23 @@ export default function TeacherStatsPage() {
         const subs: Submission[] = [];
         subSnap.forEach((d) => subs.push({ id: d.id, ...d.data() } as Submission));
         setSubmissions(subs);
+
+        const assignmentIds = subs
+          .filter((sub) => sub.studentId === 'all')
+          .map((sub) => sub.id);
+        const solutionRows: Solution[] = [];
+        for (let i = 0; i < assignmentIds.length; i += 30) {
+          const chunk = assignmentIds.slice(i, i + 30);
+          if (chunk.length === 0) continue;
+
+          const solutionsQ = query(
+            collection(db, 'solutions'),
+            where('assignmentId', 'in', chunk)
+          );
+          const solutionsSnap = await getDocs(solutionsQ);
+          solutionsSnap.forEach((d) => solutionRows.push({ id: d.id, ...d.data() } as Solution));
+        }
+        setSolutions(solutionRows);
       } catch (err) {
         console.error('Failed to fetch stats data:', err);
       } finally {
@@ -70,28 +104,61 @@ export default function TeacherStatsPage() {
   }, [user]);
 
   // Calculations
-  const reviewed = submissions.filter((s) => s.status === 'reviewed');
-  const pending = submissions.filter((s) => s.status === 'uploaded' || s.status === 'processing');
+  const assignmentById = new Map(submissions.map((submission) => [submission.id, submission]));
+  const reviewed: ReviewedItem[] = [
+    ...submissions
+      .filter((submission) => submission.status === 'reviewed')
+      .map((submission) => ({
+        id: submission.id,
+        studentId: submission.studentId,
+        subject: submission.subject,
+        score: submission.score || 0
+      })),
+    ...solutions
+      .filter((solution) => solution.status === 'teacher_graded')
+      .map((solution) => {
+        const assignment = assignmentById.get(solution.assignmentId);
+        return {
+          id: solution.id,
+          studentId: solution.studentId,
+          studentName: solution.studentName,
+          studentEmail: solution.studentEmail,
+          subject: assignment?.subject || 'Белгісіз',
+          score: solution.teacherScore ?? solution.aiScore ?? 0
+        };
+      })
+  ];
+  const pending = submissions.filter((submission) => {
+    if (submission.studentId !== 'all') {
+      return submission.status === 'uploaded' || submission.status === 'processing' || submission.status === 'pending_teacher_review';
+    }
+
+    const assignmentSolutions = solutions.filter((solution) => solution.assignmentId === submission.id);
+    return assignmentSolutions.length === 0 || assignmentSolutions.some((solution) => solution.status !== 'teacher_graded');
+  });
   const totalAvg = reviewed.length > 0
-    ? Math.round(reviewed.reduce((sum, s) => sum + (s.score || 0), 0) / reviewed.length)
+    ? Math.round(reviewed.reduce((sum, item) => sum + item.score, 0) / reviewed.length)
     : 0;
 
   // Score distribution
-  const highCount = reviewed.filter((s) => (s.score || 0) >= 85).length;
-  const midCount = reviewed.filter((s) => (s.score || 0) >= 60 && (s.score || 0) < 85).length;
-  const lowCount = reviewed.filter((s) => (s.score || 0) < 60).length;
+  const highCount = reviewed.filter((item) => item.score >= 85).length;
+  const midCount = reviewed.filter((item) => item.score >= 60 && item.score < 85).length;
+  const lowCount = reviewed.filter((item) => item.score < 60).length;
   const maxDist = Math.max(highCount, midCount, lowCount, 1);
 
   // Top students by average score
   const studentMap = new Map<string, StudentStat>();
-  for (const sub of reviewed) {
-    const key = sub.studentId;
+  for (const item of reviewed) {
+    const key = item.studentId;
     if (!studentMap.has(key)) {
-      const studentDetails = studentsMap.get(key) || { name: `Оқушы #${key.substring(0, 6)}`, email: '' };
+      const emailKey = item.studentEmail ? String(item.studentEmail).toLowerCase() : '';
+      const studentDetails = studentsMap.get(key) ||
+        (emailKey ? studentsMap.get(emailKey) : undefined) ||
+        { name: item.studentName || `Оқушы #${key.substring(0, 6)}`, email: item.studentEmail || '' };
       studentMap.set(key, { name: studentDetails.name, email: studentDetails.email, totalScore: 0, count: 0, avg: 0 });
     }
     const stat = studentMap.get(key)!;
-    stat.totalScore += sub.score || 0;
+    stat.totalScore += item.score;
     stat.count += 1;
   }
   const topStudents: (StudentStat & { id: string })[] = [];

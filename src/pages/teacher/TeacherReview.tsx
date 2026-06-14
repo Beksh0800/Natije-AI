@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Bot, FileText, Calendar, Users,
-  Award, Check, AlertCircle, Lightbulb, Loader, Trash2, Edit, Save, X
+  Award, Check, AlertCircle, Lightbulb, Loader, Trash2, Edit, Save, X,
+  CheckCircle2, Clock3, MinusCircle
 } from 'lucide-react';
 import MainLayout from '../../components/layout/MainLayout';
 import Button from '../../components/ui/Button';
-import Badge, { StatusBadge } from '../../components/ui/Badge';
+import { StatusBadge } from '../../components/ui/Badge';
 import { db } from '../../lib/firebase';
 import { doc, collection, query, where, onSnapshot, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { createNotification } from '../../services/notifications';
@@ -149,10 +150,11 @@ export default function TeacherReview() {
   }, [selectedSolution, submission]);
 
   useEffect(() => {
-    if (review && finalScore === '') {
-      setFinalScore(review.score);
-    }
-  }, [review]);
+    if (!review) return;
+
+    setFinalScore(selectedSolution?.teacherScore ?? review.score);
+    setTeacherComment(selectedSolution?.teacherComment ?? '');
+  }, [review, selectedSolution]);
 
   const handleAnalyzeLegacy = async () => {
     if (!submission) return;
@@ -182,6 +184,13 @@ export default function TeacherReview() {
         score: Number(finalScore) || 0,
         teacherComment
       });
+      await createNotification({
+        userId: submission.studentId,
+        title: 'Жұмыс бағаланды',
+        message: `${submission.title} жұмысыңыз мұғаліммен бағаланды: ${Number(finalScore) || 0} балл`,
+        type: 'grade',
+        link: `/assignments/${submission.id}`
+      });
       toast.success('Баға мен пікір сәтті сақталды және оқушыға жіберілді!');
     } catch (error) {
       console.error("Failed to confirm review", error);
@@ -193,20 +202,31 @@ export default function TeacherReview() {
 
   const handleConfirmSolution = async () => {
     if (!selectedSolution || !submission) return;
+    const score = Number(finalScore) || 0;
+
     try {
       setIsAnalyzing(true);
       const solutionRef = doc(db, 'solutions', selectedSolution.id);
       await updateDoc(solutionRef, {
         status: 'teacher_graded',
-        teacherScore: Number(finalScore) || 0,
+        teacherScore: score,
         teacherComment
       });
       
+      
+      // Check if this was the last student
+      const newGradedCount = gradedCount + 1;
+      if (newGradedCount === students.length) {
+        await updateDoc(doc(db, 'submissions', submission.id), {
+          status: 'reviewed'
+        });
+      }
+
       // Notify student
       await createNotification({
-        userId: submission.studentId,
+        userId: selectedSolution.studentId,
         title: 'Жұмыс бағаланды',
-        message: `${submission.title} жұмысыңыз мұғаліммен бағаланды: ${finalScore} балл`,
+        message: `${submission.title} жұмысыңыз мұғаліммен бағаланды: ${score} балл`,
         type: 'grade',
         link: `/assignments/${submission.id}`
       });
@@ -245,6 +265,16 @@ export default function TeacherReview() {
   }
 
   const isClassAssignment = submission.studentId === 'all';
+  const getStudentSolutions = (student: Student) => solutions
+    .filter(s =>
+      s.studentId === student.id ||
+      (student.studentId && s.studentId === student.studentId) ||
+      (s.studentEmail && s.studentEmail === student.email)
+    )
+    .sort((a, b) => b.iteration - a.iteration);
+  const submittedCount = students.filter(student => getStudentSolutions(student).length > 0).length;
+  const gradedCount = students.filter(student => getStudentSolutions(student)[0]?.status === 'teacher_graded').length;
+  const waitingCount = Math.max(submittedCount - gradedCount, 0);
 
   return (
     <MainLayout
@@ -358,61 +388,97 @@ export default function TeacherReview() {
 
       {/* CLASS ASSIGNMENT VIEW */}
       {isClassAssignment && !selectedSolution && (
-        <div className="teacher-review">
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Users size={20} /> Сынып оқушыларының шешімдері
-          </h2>
-          <div style={{ background: 'var(--bg-secondary)', borderRadius: '12px', overflowX: 'auto', border: '1px solid var(--border-color)' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '500px' }}>
-              <thead>
-                <tr style={{ background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-color)' }}>
-                  <th style={{ padding: '16px', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Оқушы</th>
-                  <th style={{ padding: '16px', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Статус</th>
-                  <th style={{ padding: '16px', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)', width: '120px', whiteSpace: 'nowrap' }}>Әрекет</th>
-                </tr>
-              </thead>
-              <tbody>
-                {students.map(student => {
-                  const studentSols = solutions.filter(s => 
-                    s.studentId === student.id || 
-                    (student.studentId && s.studentId === student.studentId) ||
-                    (s.studentEmail && s.studentEmail === student.email)
-                  ).sort((a,b) => b.iteration - a.iteration);
-                  const latestSol = studentSols[0];
-                  return (
-                    <tr key={student.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <td style={{ padding: '16px', fontWeight: 500 }}>{student.name}</td>
-                      <td style={{ padding: '16px' }}>
-                        {latestSol ? (
-                           <Badge color={latestSol.status === 'teacher_graded' ? 'green' : 'yellow'} filled>
-                             {latestSol.status === 'teacher_graded' ? `Бағаланды (${latestSol.teacherScore})` : 'Тексеруді қажет етеді'}
-                           </Badge>
-                        ) : (
-                           <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Тапсырмаған</span>
-                        )}
-                      </td>
-                      <td style={{ padding: '16px', whiteSpace: 'nowrap' }}>
-                        {latestSol && (
-                          <Button size="sm" variant="outline" onClick={() => setSelectedSolution(latestSol)}>
-                            Тексеру
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        <div className="solutions-panel">
+          <div className="solutions-panel-header">
+            <div>
+              <h2 className="solutions-panel-title">
+                <Users size={20} /> Сынып оқушыларының шешімдері
+              </h2>
+              <p className="solutions-panel-subtitle">Оқушылардың соңғы жіберген шешімдері және тексеру күйі</p>
+            </div>
+            <div className="solutions-summary">
+              <div className="solutions-summary-item">
+                <span>{students.length}</span>
+                <small>оқушы</small>
+              </div>
+              <div className="solutions-summary-item">
+                <span>{waitingCount}</span>
+                <small>тексеру керек</small>
+              </div>
+              <div className="solutions-summary-item is-success">
+                <span>{gradedCount}</span>
+                <small>бағаланды</small>
+              </div>
+            </div>
+          </div>
+
+          <div className="solutions-list" role="table" aria-label="Сынып оқушыларының шешімдері">
+            <div className="solutions-list-head" role="row">
+              <span>Оқушы</span>
+              <span>Соңғы шешім</span>
+              <span>Статус</span>
+              <span>Әрекет</span>
+            </div>
+            {students.map(student => {
+              const latestSol = getStudentSolutions(student)[0];
+              const isGraded = latestSol?.status === 'teacher_graded';
+
+              return (
+                <div key={student.id} className="solution-row" role="row" style={{ cursor: latestSol ? 'pointer' : 'default' }} onClick={() => latestSol && setSelectedSolution(latestSol)}>
+                  <div className="solution-student" role="cell">
+                    <div className="solution-avatar">{student.name.trim().slice(0, 1).toUpperCase()}</div>
+                    <div>
+                      <div className="solution-student-name">{student.name}</div>
+                      {student.email && <div className="solution-student-email">{student.email}</div>}
+                    </div>
+                  </div>
+
+                  <div className="solution-file-cell" role="cell">
+                    {latestSol ? (
+                      <>
+                        <FileText size={16} />
+                        <span>{latestSol.fileName}</span>
+                      </>
+                    ) : (
+                      <span className="solution-muted">Шешім жіберілмеген</span>
+                    )}
+                  </div>
+
+                  <div role="cell">
+                    {latestSol ? (
+                      <span className={`solution-status ${isGraded ? 'is-graded' : 'is-waiting'}`}>
+                        {isGraded ? <CheckCircle2 size={16} /> : <Clock3 size={16} />}
+                        {isGraded ? `Бағаланды: ${latestSol.teacherScore ?? 0}/100` : 'Тексеруді қажет етеді'}
+                      </span>
+                    ) : (
+                      <span className="solution-status is-empty">
+                        <MinusCircle size={16} /> Тапсырмаған
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="solution-action" role="cell">
+                    {latestSol ? (
+                      <Button size="sm" variant={isGraded ? 'ghost' : 'outline'} onClick={(e) => { e.stopPropagation(); setSelectedSolution(latestSol); }}>
+                        {isGraded ? 'Қайта қарау' : 'Тексеру'}
+                      </Button>
+                    ) : (
+                      <span className="solution-muted">—</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
 
       {/* SELECTED SOLUTION VIEW */}
       {selectedSolution && (
-        <div className="teacher-review">
+        <div className="solution-review">
            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
              <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Оқушы шешімін тексеру</h2>
-             <Button variant="outline" onClick={() => setSelectedSolution(null)}>Тізімге қайту</Button>
+             <Button variant="outline" onClick={() => navigate('/teacher/assignments')}>Тапсырмалар тізіміне қайту</Button>
            </div>
            
            <div className="review-file" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Sun, Moon, Bell, Mail, Menu, X, CheckCircle } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -10,6 +10,7 @@ import type { AppNotification } from '../../services/notifications';
 import { markMessageAsRead } from '../../services/messages';
 import type { AppMessage } from '../../services/messages';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../../contexts/ToastContext';
 import './Header.css';
 
 interface HeaderProps {
@@ -22,9 +23,12 @@ export default function Header({ onMenuToggle }: HeaderProps) {
   const { user } = useAuth();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [messagesOpen, setMessagesOpen] = useState(false);
+  const toast = useToast();
 
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [messages, setMessages] = useState<AppMessage[]>([]);
+  
+  const isInitialMount = useRef(true);
 
   const initials = getInitials(user?.name);
   const bgColor = getAvatarColor(user?.id || user?.email || '', user?.role);
@@ -66,7 +70,29 @@ export default function Header({ onMenuToggle }: HeaderProps) {
         return tB - tA;
       });
       setMessages(data);
+
+      if (!isInitialMount.current) {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const newMsg = change.doc.data() as AppMessage;
+            toast.info(
+              <div 
+                style={{ cursor: 'pointer' }}
+                onClick={() => navigate(`/messages?userId=${newMsg.senderId}&name=${encodeURIComponent(newMsg.senderName)}`)}
+              >
+                <b>{newMsg.senderName}</b>-нан хабарлама келді:<br/>
+                <span style={{ fontSize: '0.85em', opacity: 0.9 }}>{newMsg.text.length > 30 ? newMsg.text.substring(0, 30) + '...' : newMsg.text}</span>
+              </div>
+            );
+          }
+        });
+      }
     });
+
+    // Mark initial mount as false after a short delay to allow first snapshot to process
+    setTimeout(() => {
+      isInitialMount.current = false;
+    }, 1000);
 
     return () => {
       unsubNotif();
@@ -92,7 +118,8 @@ export default function Header({ onMenuToggle }: HeaderProps) {
       await markMessageAsRead(msg.id);
     }
     // We can open a reply modal here or navigate to messages
-    alert('Сообщение от ' + msg.senderName + ': ' + msg.text);
+    setMessagesOpen(false);
+    navigate(`/messages?userId=${msg.senderId}&name=${encodeURIComponent(msg.senderName)}`);
   };
 
   return (

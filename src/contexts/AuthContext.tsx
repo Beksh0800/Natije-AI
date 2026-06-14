@@ -108,7 +108,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resetPassword = async (email: string) => {
     if (!auth) throw new Error('Firebase Auth not initialized');
-    await sendPasswordResetEmail(auth, email);
+    await sendPasswordResetEmail(auth, email, {
+      url: `${window.location.origin}/login`
+    });
   };
 
   const updateUserProfile = async (name: string) => {

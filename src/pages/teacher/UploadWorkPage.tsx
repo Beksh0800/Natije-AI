@@ -14,8 +14,8 @@ import { createNotification } from '../../services/notifications';
 import type { SchoolClass, Student } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
 import { SUBJECTS } from '../../lib/constants';
-import { db } from '../../lib/firebase';
 import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { convertPdfToImage } from '../../utils/pdfToImage';
 
 export default function UploadWorkPage() {
   const { user } = useAuth();
@@ -38,6 +38,7 @@ export default function UploadWorkPage() {
   
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isProcessingPdf, setIsProcessingPdf] = useState(false);
   const toast = useToast();
 
   const [customSubjects, setCustomSubjects] = useState<string[]>([]);
@@ -66,9 +67,9 @@ export default function UploadWorkPage() {
     }
   }, [selectedClass]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const selectedFile = e.target.files[0];
+      let selectedFile = e.target.files[0];
 
       // Validate size (max 20 MB)
       if (selectedFile.size > 20 * 1024 * 1024) {
@@ -77,11 +78,25 @@ export default function UploadWorkPage() {
       }
 
       // Validate format
-      const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'docx'];
+      const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
       const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase() || '';
       if (!allowedExtensions.includes(fileExtension)) {
-        toast.error("Қате файл форматы. Тек PDF, JPG, PNG, DOCX файлдары рұқсат етілген.");
+        toast.error("Қате файл форматы. Тек PDF, JPG, JPEG немесе PNG рұқсат етілген.");
         return;
+      }
+
+      if (fileExtension === 'pdf') {
+        setIsProcessingPdf(true);
+        try {
+          toast.info("PDF өңделуде, күте тұрыңыз...");
+          selectedFile = await convertPdfToImage(selectedFile, 3); // max 3 pages
+        } catch (err: any) {
+          console.error(err);
+          toast.error("PDF-ті суретке айналдыру мүмкін болмады.");
+          setIsProcessingPdf(false);
+          return;
+        }
+        setIsProcessingPdf(false);
       }
 
       setFile(selectedFile);
@@ -146,11 +161,11 @@ export default function UploadWorkPage() {
       const classStudents = await getClassStudents(selectedClass);
       const notifPromises = classStudents.map(student => 
         createNotification({
-          userId: student.id,
+          userId: student.studentId || student.id,
           title: 'Жаңа тапсырма',
           message: `${finalSubject} пәнінен жаңа тапсырма қосылды: ${title}`,
           type: 'assignment',
-          link: '/student'
+          link: `/assignments/${newSubmissionId}`
         })
       );
       await Promise.all(notifPromises);
@@ -295,25 +310,32 @@ export default function UploadWorkPage() {
                   padding: 'var(--space-8)', 
                   textAlign: 'center',
                   background: 'var(--bg-secondary)',
-                  cursor: 'pointer',
-                  position: 'relative'
+                  cursor: isProcessingPdf ? 'wait' : 'pointer',
+                  position: 'relative',
+                  opacity: isProcessingPdf ? 0.6 : 1
                 }}
               >
                 <input 
                   type="file" 
-                  accept=".pdf,.jpg,.jpeg,.png,.docx"
+                  accept=".pdf,.jpg,.jpeg,.png"
                   onChange={handleFileChange}
+                  disabled={isProcessingPdf}
                   style={{ 
                     position: 'absolute', 
                     top: 0, left: 0, width: '100%', height: '100%', 
-                    opacity: 0, cursor: 'pointer' 
+                    opacity: 0, cursor: isProcessingPdf ? 'wait' : 'pointer' 
                   }}
                 />
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-3)' }}>
                   <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--accent-primary-light)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Upload size={24} />
+                    {isProcessingPdf ? <Loader className="spin" size={24} /> : <Upload size={24} />}
                   </div>
-                  {file ? (
+                  {isProcessingPdf ? (
+                    <div>
+                      <p style={{ fontWeight: 500, color: 'var(--text-primary)' }}>PDF өңделуде...</p>
+                      <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Күте тұрыңыз</p>
+                    </div>
+                  ) : file ? (
                     <div>
                       <p style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{file.name}</p>
                       <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{(file.size / 1024 / 1024).toFixed(2)} MB</p>
@@ -321,7 +343,7 @@ export default function UploadWorkPage() {
                   ) : (
                     <div>
                       <p style={{ color: 'var(--accent-primary)', fontWeight: 500 }}>Компьютерден файл таңдау</p>
-                      <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>Max 20 MB</p>
+                      <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>Max 20 MB (PDF, JPG, PNG)</p>
                     </div>
                   )}
                 </div>

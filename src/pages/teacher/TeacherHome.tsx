@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Users, CheckCircle, Clock, Plus, Upload, Play, Loader } from 'lucide-react';
 import MainLayout from '../../components/layout/MainLayout';
 import Card from '../../components/ui/Card';
@@ -24,6 +24,7 @@ export default function TeacherHome() {
 
   const [isCreating, setIsCreating] = useState(false);
   const [newClassName, setNewClassName] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!db || !user?.id) return;
@@ -181,7 +182,7 @@ export default function TeacherHome() {
                   </thead>
                   <tbody>
                     {pendingSubmissions.slice(0, 5).map((sub) => (
-                      <tr key={sub.id}>
+                      <tr key={sub.id} onClick={() => navigate(`/teacher/assignments/${sub.id}`)} style={{ cursor: 'pointer' }} className="hoverable-row">
                         <td>
                           <div style={{ fontWeight: 500 }}>{sub.title}</div>
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Файл: {sub.fileName}</div>
@@ -199,11 +200,9 @@ export default function TeacherHome() {
                           {new Date((sub.createdAt as any)?.toDate?.() || Date.now()).toLocaleDateString('kk-KZ')}
                         </td>
                         <td>
-                          <Link to={`/teacher/assignments/${sub.id}`} style={{ textDecoration: 'none' }}>
-                            <Button variant="primary" size="sm" icon={<Play size={12} />}>
-                              Тексеру
-                            </Button>
-                          </Link>
+                          <Button variant="primary" size="sm" icon={<Play size={12} />} onClick={(e) => { e.stopPropagation(); navigate(`/teacher/assignments/${sub.id}`); }}>
+                            Тексеру
+                          </Button>
                         </td>
                       </tr>
                     ))}

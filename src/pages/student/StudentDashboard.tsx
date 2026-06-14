@@ -12,6 +12,7 @@ import { doc, collection, query, where, onSnapshot, addDoc, updateDoc, serverTim
 import { uploadFileToFirebase } from '../../services/storage';
 import { analyzeWork } from '../../services/ai';
 import { createReview } from '../../services/reviews';
+import { convertPdfToImage } from '../../utils/pdfToImage';
 import type { Submission, Review, Solution } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -31,6 +32,7 @@ export default function StudentDashboard() {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isProcessingPdf, setIsProcessingPdf] = useState(false);
 
   useEffect(() => {
     if (!db || !id || !user?.id) return;
@@ -93,13 +95,28 @@ export default function StudentDashboard() {
     };
   }, [id, user?.id]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const selectedFile = e.target.files[0];
+      let selectedFile = e.target.files[0];
       if (selectedFile.size > 20 * 1024 * 1024) {
         toast.error("Файл өлшемі тым үлкен. Максималды өлшем: 20 MB");
         return;
       }
+
+      const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase() || '';
+      if (fileExtension === 'pdf') {
+        setIsProcessingPdf(true);
+        try {
+          toast.info("PDF өңделуде, күте тұрыңыз...");
+          selectedFile = await convertPdfToImage(selectedFile, 3);
+        } catch (err) {
+          toast.error("PDF-ті суретке айналдыру мүмкін болмады.");
+          setIsProcessingPdf(false);
+          return;
+        }
+        setIsProcessingPdf(false);
+      }
+
       setFile(selectedFile);
     }
   };
@@ -124,6 +141,7 @@ export default function StudentDashboard() {
           fileSize: fileSizeStr,
           status: 'pending_ai',
           iteration: solution.iteration + 1,
+          studentName: user.name,
           studentEmail: user.email
         });
         docRefId = solution.id;
@@ -138,6 +156,7 @@ export default function StudentDashboard() {
           fileSize: fileSizeStr,
           iteration: 1,
           status: 'pending_ai',
+          studentName: user.name,
           studentEmail: user.email,
           createdAt: serverTimestamp()
         });
@@ -267,24 +286,32 @@ export default function StudentDashboard() {
                     padding: 'var(--space-8)', 
                     textAlign: 'center',
                     background: 'var(--bg-secondary)',
-                    position: 'relative'
+                    position: 'relative',
+                    cursor: isProcessingPdf ? 'wait' : 'pointer',
+                    opacity: isProcessingPdf ? 0.6 : 1
                   }}
                 >
                   <input 
                     type="file" 
-                    accept=".pdf,.jpg,.jpeg,.png,.docx"
+                    accept=".pdf,.jpg,.jpeg,.png"
                     onChange={handleFileChange}
+                    disabled={isProcessingPdf}
                     style={{ 
                       position: 'absolute', 
                       top: 0, left: 0, width: '100%', height: '100%', 
-                      opacity: 0, cursor: 'pointer' 
+                      opacity: 0, cursor: isProcessingPdf ? 'wait' : 'pointer' 
                     }}
                   />
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-3)' }}>
                     <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--accent-primary-light)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Upload size={24} />
+                      {isProcessingPdf ? <Loader className="spin" size={24} /> : <Upload size={24} />}
                     </div>
-                    {file ? (
+                    {isProcessingPdf ? (
+                      <div>
+                        <p style={{ fontWeight: 500, color: 'var(--text-primary)' }}>PDF өңделуде...</p>
+                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Күте тұрыңыз</p>
+                      </div>
+                    ) : file ? (
                       <div>
                         <p style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{file.name}</p>
                         <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{(file.size / 1024 / 1024).toFixed(2)} MB</p>
@@ -429,13 +456,6 @@ export default function StudentDashboard() {
               <p className="score-verdict">
                 {((solution.teacherScore || solution.aiScore || 0) >= 85) ? 'Жарайсың! Өте жақсы жұмыс.' : ((solution.teacherScore || solution.aiScore || 0) >= 60) ? 'Жақсы, бірақ қателермен жұмыс істеу керек.' : 'Тақырыпты қайталап оқу керек.'}
               </p>
-              
-              <div style={{ marginTop: '24px', padding: '16px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', borderLeft: '4px solid var(--accent-primary)' }}>
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-                  <strong>Назар аударыңыз:</strong> Бұл жасанды интеллект бағасы. <br/><br/>
-                  Қорытынды бағаны мұғалім қояды.
-                </p>
-              </div>
             </div>
           </div>
         )}
