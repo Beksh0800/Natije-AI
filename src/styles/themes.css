@@ -1,0 +1,209 @@
+/* ========================================
+   NÄTIJE AI — Theme System
+   Dark & Light themes via CSS Custom Properties
+   ======================================== */
+
+/* ---------- Light Theme ---------- */
+[data-theme="light"] {
+  /* Backgrounds */
+  --bg-primary: #F0F2F5;
+  --bg-secondary: #FFFFFF;
+  --bg-sidebar: #FFFFFF;
+  --bg-sidebar-hover: #F3F0FF;
+  --bg-header: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #FAFAFA;
+  --bg-input: #F5F7FA;
+  --bg-input-focus: #FFFFFF;
+  --bg-modal-overlay: rgba(0, 0, 0, 0.4);
+  --bg-tooltip: #1A1A2E;
+  --bg-chat-user: #6C5CE7;
+  --bg-chat-bot: #F3F0FF;
+  --bg-progress-track: #E5E7EB;
+  --bg-tab-active: #6C5CE7;
+  --bg-tab-inactive: transparent;
+  --bg-quick-action: #F3F0FF;
+  --bg-streak: linear-gradient(135deg, #FEF3C7, #FDE68A);
+  --bg-goal: linear-gradient(135deg, #F3F0FF, #EDE9FE);
+
+  /* Text */
+  --text-primary: #1A1A2E;
+  --text-secondary: #6B7280;
+  --text-tertiary: #9CA3AF;
+  --text-inverse: #FFFFFF;
+  --text-on-accent: #FFFFFF;
+  --text-link: #6C5CE7;
+  --text-chat-user: #FFFFFF;
+  --text-chat-bot: #1A1A2E;
+  --text-tab-active: #FFFFFF;
+  --text-tab-inactive: #6B7280;
+
+  /* Accent / Brand */
+  --accent-primary: #6C5CE7;
+  --accent-primary-hover: #5B4BD5;
+  --accent-primary-light: #F3F0FF;
+  --accent-primary-lighter: #EDE9FE;
+  --accent-gradient: linear-gradient(135deg, #6C5CE7, #A855F7);
+  --accent-gradient-hover: linear-gradient(135deg, #5B4BD5, #9333EA);
+  --accent-secondary: #A855F7;
+
+  /* Semantic */
+  --color-success: #10B981;
+  --color-success-bg: #D1FAE5;
+  --color-success-text: #065F46;
+  --color-warning: #F59E0B;
+  --color-warning-bg: #FEF3C7;
+  --color-warning-text: #92400E;
+  --color-error: #EF4444;
+  --color-error-bg: #FEE2E2;
+  --color-error-text: #991B1B;
+  --color-info: #3B82F6;
+  --color-info-bg: #DBEAFE;
+  --color-info-text: #1E40AF;
+
+  /* Borders */
+  --border-color: #E5E7EB;
+  --border-color-hover: #D1D5DB;
+  --border-color-focus: #6C5CE7;
+  --border-color-input: #D1D5DB;
+  --border-radius-xs: 4px;
+  --border-radius-sm: 6px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+  --border-radius-2xl: 20px;
+  --border-radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  --shadow-accent: 0 4px 14px rgba(108, 92, 231, 0.25);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+  /* Scrollbar */
+  --scrollbar-track: #F0F2F5;
+  --scrollbar-thumb: #D1D5DB;
+  --scrollbar-thumb-hover: #9CA3AF;
+}
+
+/* ---------- Dark Theme ---------- */
+[data-theme="dark"] {
+  /* Backgrounds */
+  --bg-primary: #0B0B1E;
+  --bg-secondary: #111128;
+  --bg-sidebar: #0D0D24;
+  --bg-sidebar-hover: #1A1A3A;
+  --bg-header: #111128;
+  --bg-card: #161636;
+  --bg-card-hover: #1C1C40;
+  --bg-input: #1A1A3A;
+  --bg-input-focus: #1E1E42;
+  --bg-modal-overlay: rgba(0, 0, 0, 0.6);
+  --bg-tooltip: #2D2D52;
+  --bg-chat-user: #6C5CE7;
+  --bg-chat-bot: #1A1A3A;
+  --bg-progress-track: #2D2D52;
+  --bg-tab-active: #6C5CE7;
+  --bg-tab-inactive: transparent;
+  --bg-quick-action: #1A1A3A;
+  --bg-streak: linear-gradient(135deg, #44403C, #78716C);
+  --bg-goal: linear-gradient(135deg, #1A1A3A, #2D2D52);
+
+  /* Text */
+  --text-primary: #F3F4F6;
+  --text-secondary: #9CA3AF;
+  --text-tertiary: #6B7280;
+  --text-inverse: #1A1A2E;
+  --text-on-accent: #FFFFFF;
+  --text-link: #A78BFA;
+  --text-chat-user: #FFFFFF;
+  --text-chat-bot: #F3F4F6;
+  --text-tab-active: #FFFFFF;
+  --text-tab-inactive: #9CA3AF;
+
+  /* Accent / Brand */
+  --accent-primary: #7C6CF0;
+  --accent-primary-hover: #6C5CE7;
+  --accent-primary-light: #1E1A4A;
+  --accent-primary-lighter: #161240;
+  --accent-gradient: linear-gradient(135deg, #7C6CF0, #A855F7);
+  --accent-gradient-hover: linear-gradient(135deg, #6C5CE7, #9333EA);
+  --accent-secondary: #A855F7;
+
+  /* Semantic */
+  --color-success: #34D399;
+  --color-success-bg: rgba(52, 211, 153, 0.15);
+  --color-success-text: #6EE7B7;
+  --color-warning: #FBBF24;
+  --color-warning-bg: rgba(251, 191, 36, 0.15);
+  --color-warning-text: #FDE68A;
+  --color-error: #F87171;
+  --color-error-bg: rgba(248, 113, 113, 0.15);
+  --color-error-text: #FCA5A5;
+  --color-info: #60A5FA;
+  --color-info-bg: rgba(96, 165, 250, 0.15);
+  --color-info-text: #93C5FD;
+
+  /* Borders */
+  --border-color: #2D2D52;
+  --border-color-hover: #3D3D62;
+  --border-color-focus: #7C6CF0;
+  --border-color-input: #2D2D52;
+  --border-radius-xs: 4px;
+  --border-radius-sm: 6px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+  --border-radius-2xl: 20px;
+  --border-radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+  --shadow-accent: 0 4px 14px rgba(124, 108, 240, 0.3);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
+
+  /* Scrollbar */
+  --scrollbar-track: #111128;
+  --scrollbar-thumb: #2D2D52;
+  --scrollbar-thumb-hover: #3D3D62;
+}
+
+/* ---------- Shared Design Tokens ---------- */
+:root {
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Sidebar */
+  --sidebar-width: 220px;
+  --sidebar-collapsed-width: 72px;
+  --header-height: 60px;
+
+  /* Transition */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 350ms ease;
+  --transition-spring: 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Z-index */
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 300;
+  --z-tooltip: 400;
+  --z-toast: 500;
+}

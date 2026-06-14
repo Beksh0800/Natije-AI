@@ -1,0 +1,46 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Пайдаланушы тек өз деректерін оқи/жаза алады
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Сыныптар: авторизацияланған пайдаланушылар оқи алады (invite code іздеу үшін),
+    // құру — авторизацияланғандарға, өзгерту/жою — тек мұғалімге (teacherId)
+    match /classes/{classId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.teacherId;
+    }
+
+    // Оқушылар: авторизацияланғандар оқи/құра алады,
+    // өзгерту — тек авторизацияланғандарға (parentId байланыстыру үшін),
+    // жою — тек мұғалімге
+    match /students/{studentId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if false;
+    }
+
+    // Жұмыстар: авторизацияланғандар оқи/құра/өзгерте алады
+    // (AI reviewed статусын жазу үшін update қажет)
+    match /submissions/{subId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if false;
+    }
+
+    // Бағалаулар: авторизацияланғандар оқи/құра алады,
+    // өзгерту мен жою тыйым салынады (бағалау тарихын сақтау)
+    match /reviews/{revId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if false;
+    }
+  }
+}

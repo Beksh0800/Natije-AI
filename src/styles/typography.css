@@ -1,0 +1,99 @@
+/* ========================================
+   NÄTIJE AI — Typography
+   ======================================== */
+
+/* ---------- Headings (Montserrat) ---------- */
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+  font-family: 'Montserrat', 'Inter', sans-serif;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+h1, .h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+h2, .h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+h3, .h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+h4, .h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+h5, .h5 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+h6, .h6 {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* ---------- Body text ---------- */
+.text-lg {
+  font-size: 1.125rem;
+  line-height: 1.7;
+}
+
+.text-base {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.text-xs {
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+/* ---------- Font Weight ---------- */
+.font-light { font-weight: 300; }
+.font-normal { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+.font-extrabold { font-weight: 800; }
+
+/* ---------- Text Colors ---------- */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+.text-accent { color: var(--accent-primary); }
+.text-success { color: var(--color-success); }
+.text-warning { color: var(--color-warning); }
+.text-error { color: var(--color-error); }
+
+/* ---------- Gradient Text ---------- */
+.text-gradient {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ---------- Label ---------- */
+.label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}

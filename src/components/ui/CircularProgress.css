@@ -1,0 +1,53 @@
+.circular-progress {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.circular-progress svg {
+  transform: rotate(-90deg);
+}
+
+.circular-progress-track {
+  fill: none;
+  stroke: var(--bg-progress-track);
+}
+
+.circular-progress-fill {
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s ease;
+  animation: circularProgress 1.2s ease forwards;
+}
+
+.circular-progress-center {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.circular-progress-value {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.circular-progress-label {
+  font-size: 0.625rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+/* Score colors */
+.score-excellent { stroke: var(--color-success); }
+.score-good { stroke: #22C55E; }
+.score-average { stroke: var(--color-warning); }
+.score-poor { stroke: var(--color-error); }
+
+/* Gradient definition will be inline SVG */

@@ -1,0 +1,12 @@
+/* ========================================
+   Parent Dashboard Styles
+   ======================================== */
+
+.parent-table-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.parent-table-row:hover {
+  background-color: var(--bg-secondary);
+}

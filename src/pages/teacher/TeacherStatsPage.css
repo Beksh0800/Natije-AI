@@ -1,0 +1,262 @@
+/* ========================================
+   Teacher Stats Page
+   ======================================== */
+
+.stats-page-header {
+  margin-bottom: 32px;
+}
+
+.stats-page-header h1 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stats-page-header p {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+}
+
+/* Stats Row */
+.stats-top-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.stats-top-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px !important;
+}
+
+.stats-top-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stats-top-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stats-top-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.stats-top-value {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Main grid */
+.stats-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+/* Distribution bars */
+.dist-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.dist-bar-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  min-width: 70px;
+  flex-shrink: 0;
+}
+
+.dist-bar-track {
+  flex: 1;
+  height: 24px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.dist-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.6s ease;
+  min-width: 2px;
+}
+
+.dist-bar-count {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Top students */
+.top-students-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.top-student-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.top-student-item:last-child {
+  border-bottom: none;
+}
+
+.top-student-rank {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.top-student-rank.rank-1 { color: #f59e0b; }
+.top-student-rank.rank-2 { color: #94a3b8; }
+.top-student-rank.rank-3 { color: #cd7f32; }
+
+.top-student-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent-primary-light);
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.top-student-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.top-student-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.top-student-count {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.top-student-score {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--color-success-light);
+  color: var(--color-success);
+  flex-shrink: 0;
+}
+
+/* Subjects list */
+.subject-stat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.subject-stat-item:last-child {
+  border-bottom: none;
+}
+
+.subject-stat-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.subject-stat-count {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+
+/* Section title */
+.stats-section-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Empty */
+.stats-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-tertiary);
+}
+
+.stats-empty p {
+  margin-top: 8px;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 900px) {
+  .stats-top-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .stats-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .stats-top-row {
+    grid-template-columns: 1fr;
+  }
+}
